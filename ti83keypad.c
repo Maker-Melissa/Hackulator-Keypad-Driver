@@ -59,9 +59,7 @@ int colPins[] = {7, 15, 16, 2, 3, 4, 21}; // Columns I, J, K, L, M, N, O
 // Move layouts and defines to that file
 // Possibly create a Press and Release event to correspond to the actual pressing and releasing of the button rather than a small delay
 // Change icon loading to a relative path instead of absolute path
-// Make it so icons dynamically change with mode (should be pretty easy)
-// Finish code for mode changing
-// Add so if you rightclick the status icon, it shows the about dialog (optional)
+// Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
 // Remove any unused functions
 // Polish up any other small details
 
@@ -87,7 +85,7 @@ KeySym ti83Layout[8][7] = {
     {XK_F5, NoSymbol, XK_0, XK_period, XK_asciitilde, XK_KP_Enter, XK_Down}       // Row H: Graph, Null, 0, ., (-), Enter, Down
  };
 
-int mode = MODE_TI83;
+int mode = MODE_NORMAL;
 gboolean isAlphaLockActive = FALSE;
 static int counter = 0;
 int colCount = 0;
@@ -108,6 +106,52 @@ void setValue(int outputValue)
 void setBit(int bit)
 {
     setValue(1 << bit);
+}
+
+gchar * getImagePath(char * imageFile) {
+    const char* currentFolder = "/home/pi/ti83keypad/";
+    const char* imageFolder = "images/";
+    GString * imagePath = g_string_new("");
+    g_string_append(imagePath, currentFolder);
+    g_string_append(imagePath, imageFolder);
+    g_string_append(imagePath, imageFile);
+    //g_print(imagePath->str);
+    return imagePath->str;
+}
+
+gchar * getModeIconImage(void)
+{
+    if (mode == MODE_SECOND) {
+        return "2nd.png";
+    } else if (mode == MODE_ALPHA_LOWER) {
+        return "lowercase.png";
+    } else if (mode == MODE_ALPHA_UPPER) {
+        return "uppercase.png";
+    } else if (mode == MODE_TI83) {
+        return "ti83mode.png";
+    }
+    
+    return "numbers.png";
+}
+
+void updateStatusIcon(void)
+{
+    gtk_status_icon_set_from_file (tray, getImagePath(getModeIconImage()));
+}
+
+void changeMode(int newMode)
+{
+    mode = newMode;
+    updateStatusIcon();
+}
+
+void cycleModes(void)
+{
+    if (mode == MODE_TI83) {
+        changeMode(MODE_NORMAL);
+    } else {
+        changeMode(MODE_TI83);
+    }
 }
 
 void greet( GtkWidget *widget, gpointer data )
@@ -152,7 +196,7 @@ void emulateKeyPress(KeySym keySym)
     KeyCode modcode = 0; //init value
     gboolean doShift = FALSE;
     
-    if (KeySym == NoSymbol) {
+    if (keySym == NoSymbol) {
         return;
     }
     
@@ -218,7 +262,7 @@ gboolean loop(gpointer data)
     
     if (digitalRead(ONKEY_PIN) == LOW) {
         if (!keyFound) {
-            if (mode = MODE_TI83) {
+            if (mode == MODE_TI83) {
                 emulateKeyPress(XK_F12);
                 delay(BOUNCE_DELAY);
             }
@@ -247,19 +291,7 @@ static void show_about( GtkWidget *widget, gpointer data )
 }
 */
 
-// To Do Function to cycle through modes and call changeMode()
 
-void cycleModes(void)
-{
-    
-}
-
-void changeMode(int newMode)
-{
-    mode = newMode;
-    // Change to appropriate Icon
-}
-                               
 int main(int argc, char *argv[])
 {
     gtk_init (&argc, &argv);
@@ -269,8 +301,7 @@ int main(int argc, char *argv[])
         exit(0);
     }
     
-    changeMode(MODE_TI83);
-    tray = gtk_status_icon_new_from_file("/home/pi/ti83keypad/images/ti83mode.png");
+    tray = gtk_status_icon_new_from_file(getImagePath(getModeIconImage()));
     gtk_status_icon_set_tooltip_text(tray, "Normal");
     
     setup();
