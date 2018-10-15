@@ -3,15 +3,16 @@
 
 ***************************************************/
 
-// To do:
-// Figure out how fast to read the keyboard to make it respond well yet not slow the system down. Start with 1ms/row and go from there
-// Properly Debounce buttons
-// Store modes (Normal, Alpha, ALPHA, 2nd)
-// Create Ascii Keymaps for each mode and allow transitions between modes
-// Add checking on/off button
-// Check for shutdown 2nd->Off
-// Maybe a sleep mode of some kind
-// Maybe some key combos to change modes
+// To Do:
+// Create a layout for each mode: Normal, 2nd, Alpha, AlphaLower
+// Place layouts in ti83keypad.h
+// Create all function declarations in ti83keypad.h
+// Move #defines to ti83keypad.h
+// Create a Press and Release event to correspond to the actual pressing and releasing of the button rather than a small delay
+// Change icon loading to a relative path instead of absolute path (optional)
+// Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
+// Remove any unused functions
+// Polish up any other small details
 
 #include <stdio.h>
 #include <unistd.h>
@@ -51,17 +52,6 @@ KeySym shiftSymbols[2] = {
 };
 
 int colPins[] = {7, 15, 16, 2, 3, 4, 21}; // Columns I, J, K, L, M, N, O
-
-// To Do:
-// Create a layout for each mode: Normal, 2nd, Alpha, AlphaLower
-// Place in ti83keypad.h
-// Create all function declarations in that file
-// Move layouts and defines to that file
-// Possibly create a Press and Release event to correspond to the actual pressing and releasing of the button rather than a small delay
-// Change icon loading to a relative path instead of absolute path
-// Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
-// Remove any unused functions
-// Polish up any other small details
 
 KeySym normalLayout[8][7] = {
     {XK_F11, XK_F6, XK_F7, XK_F8, XK_F9, XK_Escape, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
