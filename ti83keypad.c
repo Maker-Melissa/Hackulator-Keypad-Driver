@@ -32,14 +32,14 @@
 
 #define SCAN_DELAY      5 // In Milliseconds
 #define BOUNCE_DELAY    250 // In MilliSeconds
-#define KEYPRESS_DELAY  50
+#define KEYPRESS_DELAY  50 // The length of time a button is held pressed In MilliSeconds
 
-#define MODE_NORMAL 1
-#define MODE_ALPHA_LOWER 2
-#define MODE_ALPHA_LOWER_LOCK 3
-#define MODE_ALPHA_UPPER 4
-#define MODE_ALPHA_UPPER_LOCK 5
-#define MODE_TI83 6
+// Mode corresponds to the keyboard layout used as well as the icon displayed
+#define MODE_NORMAL 1       // numbers.png
+#define MODE_ALPHA_LOWER 2  // lowercase.png
+#define MODE_ALPHA_UPPER 3  // uppercase.png
+#define MODE_SECOND 4       // 2nd.png
+#define MODE_TI83 5         // ti83mode.png
 
 GtkStatusIcon *tray;
 Display *display;
@@ -51,7 +51,32 @@ KeySym shiftSymbols[2] = {
 };
 
 int colPins[] = {7, 15, 16, 2, 3, 4, 21}; // Columns I, J, K, L, M, N, O
-KeySym ti83layout[8][7] = {
+
+// To Do:
+// Create a layout for each mode: Normal, 2nd, Alpha, AlphaLower
+// Place in ti83keypad.h
+// Create all function declarations in that file
+// Move layouts and defines to that file
+// Possibly create a Press and Release event to correspond to the actual pressing and releasing of the button rather than a small delay
+// Change icon loading to a relative path instead of absolute path
+// Make it so icons dynamically change with mode (should be pretty easy)
+// Finish code for mode changing
+// Add so if you rightclick the status icon, it shows the about dialog (optional)
+// Remove any unused functions
+// Polish up any other small details
+
+KeySym normalLayout[8][7] = {
+    {XK_F11, XK_F6, XK_F7, XK_F8, XK_F9, XK_Escape, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
+    {XK_Delete, XK_apostrophe, XK_x, XK_F10, NoSymbol, NoSymbol, NoSymbol},      // Row B: Del, Alpha, "X,T,𝚹,n" (GraphVar), Stat
+    {XK_Tab, XK_backslash, XK_s, XK_c, XK_t, XK_asciicircum, NoSymbol},      // Row C: 2nd, X^-1, Sin, Cos, Tan, ^
+    {XK_F1, XK_semicolon, XK_comma, XK_parenleft, XK_parenright, XK_slash, NoSymbol},      // Row D: Y=, X^2, ',', (, ), ÷
+    {XK_F2, XK_o, XK_7, XK_8, XK_9, XK_KP_Multiply, XK_Up},      // Row E: Window, Log, 7, 8, 9, X (Multiply), Up
+    {XK_F3, XK_l, XK_4, XK_5, XK_6, XK_KP_Subtract, XK_Right},      // Row F: Zoom, LN, 4, 5, 6, -, Right
+    {XK_F4, XK_equal, XK_1, XK_2, XK_3, XK_KP_Add, XK_Left},      // Row G: Trace, Sto->, 1, 2, 3, +, Left
+    {XK_F5, NoSymbol, XK_0, XK_period, XK_asciitilde, XK_KP_Enter, XK_Down}       // Row H: Graph, Null, 0, ., (-), Enter, Down
+};
+
+KeySym ti83Layout[8][7] = {
     {XK_F11, XK_F6, XK_F7, XK_F8, XK_F9, XK_Escape, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
     {XK_Delete, XK_apostrophe, XK_x, XK_F10, NoSymbol, NoSymbol, NoSymbol},      // Row B: Del, Alpha, "X,T,𝚹,n" (GraphVar), Stat
     {XK_Tab, XK_backslash, XK_s, XK_c, XK_t, XK_asciicircum, NoSymbol},      // Row C: 2nd, X^-1, Sin, Cos, Tan, ^
@@ -63,7 +88,7 @@ KeySym ti83layout[8][7] = {
  };
 
 int mode = MODE_TI83;
-gboolean isSecondActive = FALSE;
+gboolean isAlphaLockActive = FALSE;
 static int counter = 0;
 int colCount = 0;
 
@@ -162,10 +187,10 @@ void emulateKeyPress(KeySym keySym)
 KeySym getKeySymbol(int row, int col)
 {
     if (mode == MODE_TI83) {
-        return ti83layout[row][col];
+        return ti83Layout[row][col];
     }
     
-    return ti83layout[row][col];
+    return normalLayout[row][col];
 }
 
 gboolean loop(gpointer data)
@@ -257,23 +282,3 @@ int main(int argc, char *argv[])
     
     return 0;
 }
-/*
-int si_main(int argc, char *argv[])
-{
-    GtkStatusIcon *si;
-    int i=1, watch, fd;
-    gtk_init (&argc, &argv); // loop through icon, tooltip, click messages
-    while (i<argc) {
-        fd = inotify_init(); // get file descriptor to write on if image changes
-        si = gtk_status_icon_new_from_file(argv[i]); // get a status icon widget
-        gtk_status_icon_set_title(si,argv[i]); // hack to store the image path
-        watch = inotify_add_watch( fd, argv[i++], IN_MODIFY );
-        gdk_input_add( fd, GDK_INPUT_READ, refresh, si ); // inotify fd is ready for reading, refresh
-        gtk_status_icon_set_tooltip_text(si,argv[i++]);
-        g_signal_connect(G_OBJECT(si), "activate", G_CALLBACK(leftclick),(gpointer) argv[i++]);
-        g_signal_connect(G_OBJECT(si), "popup-menu", G_CALLBACK(rightclick), (gpointer) argv[i++]);
-        
-    }
-    gtk_main ();
-    
-}*/
