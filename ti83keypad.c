@@ -7,17 +7,20 @@
 // Finish Alpha Locking functionality
 //
 // Test All Valid Mode Transitions:
-// Normal -> Alpha Lower
-// Normal -> 2nd
-// Alpha Upper -> Alpha Lock
-// Alpha Upper -> Alpha Lower
-// Alpha Upper -> Normal
-// Alpha Upper -> Alpha Upper with Lock
-// Alpha Lower -> 2nd
-// Alpha Lower -> Alpha Upper
-// Alpha Lower -> Normal
-// Alpha Lower -> Alpha Lower with Lock
-// 2nd -> Previous Mode
+// Normal -> Alpha Lower (By Pressing Alpha)
+// Normal -> 2nd (By Pressing 2nd)
+// Alpha Upper -> Normal (By pressing Any Key)
+// Alpha Upper -> 2nd (By Pressing 2nd)
+// Alpha Lower -> 2nd (By Pressing 2nd)
+// Alpha Lower -> Normal (By pressing Any Key)
+// AlphaLock Lower -> Normal (By Pressing what?)
+// AlphaLock Lower -> 2nd (By Pressing 2nd)
+// AlphaLock Upper -> Normal (By Pressing what?)
+// AlphaLock Upper -> 2nd (By Pressing 2nd)
+// 2nd -> AlphaLock Lower (By Pressing Alpha if lastMode = alphaLower)
+// 2nd -> AlphaLock Upper (By Pressing Alpha if lastMode = alphaUpper)
+// 2nd -> Previous Mode  (By pressing Any Key besides Alpha)
+//
 // Power Off Functionality
 // Change icon loading to a relative path instead of absolute path (optional)
 // Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
