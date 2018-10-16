@@ -19,7 +19,6 @@
 // 2nd -> Previous Mode
 // Locking means it won't change back to Normal, so 2nd Lock doesn't exist
 
-// Create a Press and Release event to correspond to the actual pressing and releasing of the button rather than a small delay
 // Change icon loading to a relative path instead of absolute path (optional)
 // Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
 // Remove any unused functions
@@ -129,55 +128,80 @@ void setup(void)
     }
 }
 
+gboolean isShiftRequired(KeySym keySym)
+{
+    // Check if a Shift is Required
+    for (int i = 0; i < SHIFT_SYMBOL_SIZE; i++) {
+        if (keySym == shiftSymbols[i]) {
+            return TRUE;
+        }
+    }
+    
+    return FALSE;
+}
+
 void emulateKeyPress(KeySym keySym)
 {
     KeyCode modcode = 0; //init value
-    gboolean doShift = FALSE;
     
     if (keySym == NoSymbol) {
         return;
     }
     
-    // Check if a Shift is Required
-    for (int i = 0; i < sizeof(shiftSymbols); i++) {
-        if (keySym == shiftSymbols[i]) {
-            doShift = TRUE;
-            break;
-        }
-    }
-
     modcode = XKeysymToKeycode(display, keySym);
     
-    if (doShift == TRUE) {
+    if (isShiftRequired(keySym)) {
+        g_print("Event: Shift Pressed\n");
         XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Shift_L), True, 0);
         XFlush(display);
     }
     
+    g_print("Event: Key Pressed\n");
+    
     XTestFakeKeyEvent(display, modcode, True, 0);
     XFlush(display);
-    delay(KEYPRESS_DELAY);
+}
+
+void emulateKeyRelease(KeySym keySym)
+{
+    KeyCode modcode = 0; //init value
+    
+    if (keySym == NoSymbol) {
+        return;
+    }
+    
+
+    modcode = XKeysymToKeycode(display, keySym);
+    
+    g_print("Event: Key Released\n");
     XTestFakeKeyEvent(display, modcode, False, 0);
     XFlush(display);
     
-    if (doShift == TRUE) {
+    if (isShiftRequired(keySym)) {
+        g_print("Event: Shift Released\n");
         XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Shift_L), False, 0);
         XFlush(display);
     }
-
+    
 }
 
 KeySym getKeySymbol(int row, int col)
 {
     if (mode == MODE_TI83) {
+        g_print("Getting TI-83 Key for [%i, %i]\n", row, col);
         return ti83Layout[row][col];
     } else if (mode == MODE_ALPHA_UPPER) {
+        g_print("Getting Upper Key for [%i, %i]\n", row, col);
         return alphaUpperLayout[row][col];
     } else if (mode == MODE_ALPHA_LOWER) {
+        g_print("Getting Lower Key for [%i, %i]\n", row, col);
         return alphaLowerLayout[row][col];
     } else if (mode == MODE_SECOND) {
+        g_print("Getting Second Key for [%i, %i]\n", row, col);
         return secondLayout[row][col];
     }
     
+    g_print("Getting Normal Key for [%i, %i]\n", row, col);
     return normalLayout[row][col];
 }
 
@@ -186,6 +210,10 @@ gboolean loop(gpointer data)
     int row, col;
     gboolean keyFound = FALSE;
     KeySym ks;
+    
+    if (isKeyPressed) {
+        return FALSE;
+    }
 
     for (row = 0; row < 8; row++) {
         setBit(row);
@@ -193,6 +221,16 @@ gboolean loop(gpointer data)
             if (digitalRead(colPins[col]) == HIGH) {
                 ks = getKeySymbol(row, col);
                 emulateKeyPress(ks);
+                isKeyPressed = TRUE;
+                while (keyFound == FALSE && digitalRead(colPins[col]) == HIGH) {
+                    if (ks == XK_F11 && digitalRead(ONKEY_PIN) == LOW) {
+                        g_print("Mode Change Key Combo Detected\n");
+                        cycleModes();
+                        keyFound = TRUE;
+                    }
+                };
+                emulateKeyRelease(ks);
+                isKeyPressed = FALSE;
                 keyFound = TRUE;                            // Force exit of both for loops.
             }
             
@@ -207,12 +245,35 @@ gboolean loop(gpointer data)
     if (digitalRead(ONKEY_PIN) == LOW) {
         if (!keyFound) {
             if (mode == MODE_TI83) {
+                // Emulate F12 and Check For Mode Change Combo
                 emulateKeyPress(XK_F12);
+                while (keyFound == FALSE && digitalRead(ONKEY_PIN) == LOW) {
+                    setBit(0);
+                    if (digitalRead(colPins[0]) == HIGH) {
+                        g_print("Mode Change Key Combo Detected\n");
+                        cycleModes();
+                        keyFound = TRUE;
+                    }
+                };
+                emulateKeyRelease(XK_F12);
+                delay(BOUNCE_DELAY);
+            } else if (mode == MODE_SECOND) {
+                // Power Down
+                g_print("Power Down\n");
+            } else {
+                // Check For Mode Change Combo
+                emulateKeyPress(NoSymbol);
+                while (keyFound == FALSE && digitalRead(ONKEY_PIN) == LOW) {
+                    setBit(0);
+                    if (digitalRead(colPins[0]) == HIGH) {
+                        g_print("Mode Change Key Combo Detected\n");
+                        cycleModes();
+                        keyFound = TRUE;
+                    }
+                };
+                emulateKeyRelease(NoSymbol);
                 delay(BOUNCE_DELAY);
             }
-        } else if (ks == XK_F11) { // Mode + On
-            g_print("Mode Change Key Combo Detected\n");
-            cycleModes();
         }
     }
     

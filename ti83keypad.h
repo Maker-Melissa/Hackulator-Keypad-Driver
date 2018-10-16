@@ -23,9 +23,9 @@
 #define LATCH_PIN   26
 #define ONKEY_PIN   9
 
+// Delays
 #define SCAN_DELAY      5 // In Milliseconds
 #define BOUNCE_DELAY    250 // In MilliSeconds
-#define KEYPRESS_DELAY  50 // The length of time a button is held pressed In MilliSeconds
 
 // Mode corresponds to the keyboard layout used as well as the icon displayed
 #define MODE_NORMAL 1       // numbers.png
@@ -43,11 +43,13 @@
 #define SPECIAL_BRIGHT_UP_KEY         0x8005
 #define SPECIAL_BRIGHT_DOWN_KEY       0x8006
 
+#define SHIFT_SYMBOL_SIZE 39
+
 GtkStatusIcon *tray;
 Display *display;
 
 // Key Symbols requiring a Shift (Add as needed)
-KeySym shiftSymbols[] = {
+KeySym shiftSymbols[SHIFT_SYMBOL_SIZE] = {
     XK_asciitilde,
     XK_asciicircum,
     XK_greater,
@@ -148,9 +150,11 @@ KeySym ti83Layout[8][7] = {
 
 int mode = MODE_NORMAL;
 gboolean isAlphaLockActive = FALSE;
+gboolean isKeyPressed = FALSE;
 static int counter = 0;
 int colCount = 0;
 
+gboolean isShiftRequired(KeySym keySym);
 int getColCount(void);
 void setValue(int outputValue);
 void setBit(int bit);
@@ -163,6 +167,7 @@ void greet(GtkWidget *widget, gpointer data);
 void destroy(GtkWidget *widget, gpointer data);
 void setup(void);
 void emulateKeyPress(KeySym keySym);
+void emulateKeyRelease(KeySym keySym);
 KeySym getKeySymbol(int row, int col);
 gboolean loop(gpointer data);
 int main(int argc, char *argv[]);
