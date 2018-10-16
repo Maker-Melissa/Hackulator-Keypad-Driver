@@ -112,7 +112,7 @@ KeySym normalLayout[8][7] = {
 };
 
 KeySym alphaUpperLayout[8][7] = {
-    {XK_F11, XK_A, XK_B, XK_C, NoSymbol, XK_Escape, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
+    {XK_F11, XK_A, XK_B, XK_C, NoSymbol, SPECIAL_NORMAL_KEY, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
     {XK_BackSpace, SPECIAL_ALPHA_LOWER_KEY, NoSymbol, NoSymbol, NoSymbol, NoSymbol, NoSymbol},      // Row B: Del, Alpha, "X,T,𝚹,n" (GraphVar), Stat
     {SPECIAL_2ND_KEY, XK_D, XK_E, XK_F, XK_G, XK_H, NoSymbol},      // Row C: 2nd, X^-1, Sin, Cos, Tan, ^
     {XK_F1, XK_I, XK_J, XK_K, XK_L, XK_M, NoSymbol},      // Row D: Y=, X^2, ',', (, ), ÷
@@ -123,7 +123,7 @@ KeySym alphaUpperLayout[8][7] = {
 };
 
 KeySym alphaLowerLayout[8][7] = {
-    {XK_F11, XK_a, XK_b, XK_c, NoSymbol, XK_Escape, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
+    {XK_F11, XK_a, XK_b, XK_c, NoSymbol, SPECIAL_NORMAL_KEY, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
     {XK_BackSpace, SPECIAL_ALPHA_UPPER_KEY, NoSymbol, NoSymbol, NoSymbol, NoSymbol, NoSymbol},      // Row B: Del, Alpha, "X,T,𝚹,n" (GraphVar), Stat
     {SPECIAL_2ND_KEY, XK_d, XK_e, XK_f, XK_g, XK_h, NoSymbol},      // Row C: 2nd, X^-1, Sin, Cos, Tan, ^
     {XK_F1, XK_i, XK_j, XK_k, XK_l, XK_m, NoSymbol},      // Row D: Y=, X^2, ',', (, ), ÷
@@ -134,7 +134,7 @@ KeySym alphaLowerLayout[8][7] = {
 };
 
 KeySym secondLayout[8][7] = {
-    {XK_F11, XK_asciitilde, NoSymbol, NoSymbol, NoSymbol, XK_Escape, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
+    {SPECIAL_NORMAL_KEY, XK_asciitilde, NoSymbol, NoSymbol, NoSymbol, SPECIAL_NORMAL_KEY, NoSymbol},  // Row A: Mode, Math, Apps, Prgm, Vars, Clear
     {XK_Insert, SPECIAL_LOCK_KEY, XK_F12, NoSymbol, NoSymbol, NoSymbol, NoSymbol},      // Row B: Del, Alpha, "X,T,𝚹,n" (GraphVar), Stat
     {SPECIAL_NORMAL_KEY, NoSymbol, NoSymbol, NoSymbol, NoSymbol, XK_ampersand, NoSymbol},      // Row C: 2nd, X^-1, Sin, Cos, Tan, ^
     {XK_F6, NoSymbol, NoSymbol, XK_braceleft, XK_braceright, XK_e, NoSymbol},      // Row D: Y=, X^2, ',', (, ), ÷
@@ -173,13 +173,14 @@ gboolean specialKey(KeySym keySym, int eventType);
 void brightnessUp(void);
 void brightnessDown(void);
 void changeAlphaLock(void);
-void handleLockStatus(void);
+void handleLockStatus(KeySym keySym);
 void updateStatusIcon(void);
 void changeMode(int newMode);
 void cycleModes(void);
 void greet(GtkWidget *widget, gpointer data);
 void destroy(GtkWidget *widget, gpointer data);
 void setup(void);
+void powerDown(void);
 void emulateKeyPress(KeySym keySym);
 void emulateKeyRelease(KeySym keySym);
 KeySym getKeySymbol(int row, int col);

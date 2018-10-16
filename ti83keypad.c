@@ -4,25 +4,7 @@
 ***************************************************/
 
 // To Do:
-// Finish Alpha Locking functionality (defined below)
-//
-// Test All Valid Mode Transitions:
-// Normal -> Alpha Lower (By Pressing Alpha)
-// Normal -> 2nd (By Pressing 2nd)
-// Alpha Upper -> Normal (By pressing Any Key)
-// Alpha Upper -> 2nd (By Pressing 2nd)
-// Alpha Lower -> 2nd (By Pressing 2nd)
-// Alpha Lower -> Normal (By pressing Any Key)
-// AlphaLock Lower -> Normal (By Pressing Clear)
-// AlphaLock Lower -> 2nd (By Pressing 2nd)
-// AlphaLock Upper -> Normal (By Pressing Clear)
-// AlphaLock Upper -> 2nd (By Pressing 2nd)
-// 2nd -> AlphaLock Lower (By Pressing Alpha)
-// 2nd -> AlphaLock Upper (By Pressing Alpha if lastMode = alphaUpper)
-// 2nd -> Normal  (By pressing Quit or Clear)
-// 2nd -> Previous Mode  (By pressing Any Key besides Alpha, Quit, or Clear)
-//
-// Implement Power Off Functionality
+// Add Screen to Black for Shutdown
 // Change icon loading to a relative path instead of absolute path (optional)
 // Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
 // Remove any unused functions
@@ -100,26 +82,32 @@ void brightnessDown(void)
     g_print("Brightness Down [%i/%i]", brightness, MAX_BRIGHTNESS);
 }
 
-void handleLockStatus(void)
+// This function handles lock status for the non-special keys
+void handleLockStatus(KeySym keySym)
 {
-    return;
-    if (mode != MODE_NORMAL && isAlphaLockActive == FALSE) {
+    if (mode == MODE_SECOND) {
         changeMode(lastMode);
+    } else if ((mode == MODE_ALPHA_LOWER || mode == MODE_ALPHA_UPPER) && isAlphaLockActive == FALSE) {
+        changeMode(MODE_NORMAL);
     }
 }
 
 void changeAlphaLock(void)
 {
+    if (mode != MODE_SECOND) {
+        return;
+    }
+    
     if (isAlphaLockActive) {
         isAlphaLockActive = FALSE;
     } else {
         isAlphaLockActive = TRUE;
     }
     
-    if (lastMode == MODE_ALPHA_LOWER) {
-        changeMode(lastMode);
-    } else {
+    if (lastMode == MODE_ALPHA_UPPER) {
         changeMode(MODE_ALPHA_UPPER);
+    } else if (lastMode == MODE_ALPHA_LOWER || lastMode == MODE_NORMAL) {
+        changeMode(MODE_ALPHA_LOWER);
     }
 }
 
@@ -159,7 +147,9 @@ void changeMode(int newMode)
 {
     lastMode = mode;
     mode = newMode;
-    isAlphaLockActive = FALSE;
+    if (newMode == MODE_NORMAL || newMode == MODE_TI83) {
+        isAlphaLockActive = FALSE;
+    }
     updateStatusIcon();
 }
 
@@ -202,11 +192,13 @@ void emulateKeyPress(KeySym keySym)
     KeyCode modcode = 0; //init value
     isKeyPressed = TRUE;
     
-    if (keySym == NoSymbol) {
-        return;
-    }
-    
     if (specialKey(keySym, EVENT_PRESS)) {
+        return;
+    } else {
+        handleLockStatus(keySym);
+    }
+
+    if (keySym == NoSymbol) {
         return;
     }
     
@@ -229,11 +221,11 @@ void emulateKeyRelease(KeySym keySym)
     KeyCode modcode = 0; //init value
     isKeyPressed = FALSE;
     
-    if (keySym == NoSymbol) {
+    if (specialKey(keySym, EVENT_RELEASE)) {
         return;
     }
-
-    if (specialKey(keySym, EVENT_RELEASE)) {
+    
+    if (keySym == NoSymbol) {
         return;
     }
 
@@ -249,6 +241,13 @@ void emulateKeyRelease(KeySym keySym)
         XFlush(display);
     }
     
+}
+
+void shutdown(void)
+{
+    // Would like something to change brightness to 0
+    // Maybe it has something to do with system not blacking out screen anymore...
+    system ("sudo shutdown -h now");
 }
 
 KeySym getKeySymbol(int row, int col)
@@ -309,7 +308,6 @@ gboolean loop(gpointer data)
         setBit(row);
         for (col = 0; col < colCount; col++) {
             if (digitalRead(colPins[col]) == HIGH) {
-                handleLockStatus();
                 ks = getKeySymbol(row, col);
                 emulateKeyPress(ks);
                 while (keyFound == FALSE && digitalRead(colPins[col]) == HIGH) {
@@ -333,7 +331,6 @@ gboolean loop(gpointer data)
     
     if (digitalRead(ONKEY_PIN) == LOW) {
         if (!keyFound) {
-            handleLockStatus();
             if (mode == MODE_TI83) {
                 // Emulate F12 and Check For Mode Change Combo
                 emulateKeyPress(XK_F12);
@@ -351,6 +348,7 @@ gboolean loop(gpointer data)
                 emulateKeyPress(NoSymbol);
                 // Power Down
                 g_print("Power Down\n");
+                shutdown();
                 // So that we don't keep looping
                 while (digitalRead(ONKEY_PIN) == LOW);
                 emulateKeyRelease(NoSymbol);
