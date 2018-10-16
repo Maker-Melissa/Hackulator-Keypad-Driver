@@ -4,7 +4,21 @@
 ***************************************************/
 
 // To Do:
-// Create a layout for each mode: Normal, 2nd, Alpha, AlphaLower
+// Add Mode Switching for Alpha (upper and lower) and 2nd as well as Alpha Locking
+// Valid Mode Transitions:
+// Normal -> Alpha Lower
+// Normal -> 2nd
+// Alpha Upper -> Alpha Lock
+// Alpha Upper -> Alpha Lower
+// Alpha Upper -> Normal
+// Alpha Upper -> Alpha Upper with Lock
+// Alpha Lower -> 2nd
+// Alpha Lower -> Alpha Upper
+// Alpha Lower -> Normal
+// Alpha Lower -> Alpha Lower with Lock
+// 2nd -> Previous Mode
+// Locking means it won't change back to Normal, so 2nd Lock doesn't exist
+
 // Create a Press and Release event to correspond to the actual pressing and releasing of the button rather than a small delay
 // Change icon loading to a relative path instead of absolute path (optional)
 // Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
@@ -156,6 +170,12 @@ KeySym getKeySymbol(int row, int col)
 {
     if (mode == MODE_TI83) {
         return ti83Layout[row][col];
+    } else if (mode == MODE_ALPHA_UPPER) {
+        return alphaUpperLayout[row][col];
+    } else if (mode == MODE_ALPHA_LOWER) {
+        return alphaLowerLayout[row][col];
+    } else if (mode == MODE_SECOND) {
+        return secondLayout[row][col];
     }
     
     return normalLayout[row][col];
@@ -190,7 +210,7 @@ gboolean loop(gpointer data)
                 emulateKeyPress(XK_F12);
                 delay(BOUNCE_DELAY);
             }
-        } else if (ks == XK_F5) {
+        } else if (ks == XK_F11) { // Mode + On
             g_print("Mode Change Key Combo Detected\n");
             cycleModes();
         }
