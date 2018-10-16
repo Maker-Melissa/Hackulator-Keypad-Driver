@@ -23,6 +23,10 @@
 #define LATCH_PIN   26
 #define ONKEY_PIN   9
 
+// Event Types
+#define EVENT_PRESS 1
+#define EVENT_RELEASE 2
+
 // Delays
 #define SCAN_DELAY      5 // In Milliseconds
 #define BOUNCE_DELAY    250 // In MilliSeconds
@@ -149,6 +153,7 @@ KeySym ti83Layout[8][7] = {
 };
 
 int mode = MODE_NORMAL;
+int lastMode = MODE_NORMAL;
 gboolean isAlphaLockActive = FALSE;
 gboolean isKeyPressed = FALSE;
 static int counter = 0;
@@ -160,6 +165,11 @@ void setValue(int outputValue);
 void setBit(int bit);
 gchar * getImagePath(char * imageFile);
 gchar * getModeIconImage(void);
+gboolean specialKey(KeySym keySym, int eventType);
+void brightnessUp(void);
+void brightnessDown(void);
+void changeAlphaLock(void);
+void handleLockStatus(void);
 void updateStatusIcon(void);
 void changeMode(int newMode);
 void cycleModes(void);

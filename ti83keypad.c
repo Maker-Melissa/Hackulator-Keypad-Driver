@@ -4,8 +4,9 @@
 ***************************************************/
 
 // To Do:
-// Add Mode Switching for Alpha (upper and lower) and 2nd as well as Alpha Locking
-// Valid Mode Transitions:
+// Finish Alpha Locking functionality
+//
+// Test All Valid Mode Transitions:
 // Normal -> Alpha Lower
 // Normal -> 2nd
 // Alpha Upper -> Alpha Lock
@@ -17,7 +18,6 @@
 // Alpha Lower -> Normal
 // Alpha Lower -> Alpha Lower with Lock
 // 2nd -> Previous Mode
-// Locking means it won't change back to Normal, so 2nd Lock doesn't exist
 
 // Change icon loading to a relative path instead of absolute path (optional)
 // Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
@@ -42,6 +42,73 @@ void setValue(int outputValue)
 void setBit(int bit)
 {
     setValue(1 << bit);
+}
+
+gboolean specialKey(KeySym keySym, int eventType)
+{
+    // If Special Key, respond and return true
+    if (eventType == EVENT_RELEASE) {
+        if (keySym == SPECIAL_ALPHA_UPPER_KEY) {
+            changeMode(MODE_ALPHA_UPPER);
+        } else if (keySym == SPECIAL_ALPHA_LOWER_KEY) {
+            changeMode(MODE_ALPHA_LOWER);
+        } else if (keySym == SPECIAL_2ND_KEY) {
+            changeMode(MODE_SECOND);
+        } else if (keySym == SPECIAL_NORMAL_KEY) {
+            changeMode(MODE_NORMAL);
+        } else if (keySym == SPECIAL_LOCK_KEY) {
+            changeAlphaLock();
+        } else if (keySym == SPECIAL_BRIGHT_UP_KEY) {
+            brightnessUp();
+        } else if (keySym == SPECIAL_BRIGHT_DOWN_KEY) {
+            brightnessDown();
+        }
+   }
+    
+    if (keySym == SPECIAL_ALPHA_UPPER_KEY ||
+        keySym == SPECIAL_ALPHA_LOWER_KEY ||
+        keySym == SPECIAL_2ND_KEY ||
+        keySym == SPECIAL_LOCK_KEY ||
+        keySym == SPECIAL_NORMAL_KEY ||
+        keySym == SPECIAL_BRIGHT_UP_KEY ||
+        keySym == SPECIAL_BRIGHT_DOWN_KEY) {
+        return TRUE;
+    }
+    
+    return FALSE;
+}
+
+void brightnessUp(void)
+{
+    
+}
+
+void brightnessDown(void)
+{
+    
+}
+
+void handleLockStatus(void)
+{
+    return;
+    if (mode != MODE_NORMAL && isAlphaLockActive == FALSE) {
+        changeMode(lastMode);
+    }
+}
+
+void changeAlphaLock(void)
+{
+    if (isAlphaLockActive) {
+        isAlphaLockActive = FALSE;
+    } else {
+        isAlphaLockActive = TRUE;
+    }
+    
+    if (lastMode == MODE_ALPHA_LOWER) {
+        changeMode(lastMode);
+    } else {
+        changeMode(MODE_ALPHA_UPPER);
+    }
 }
 
 gchar * getImagePath(char * imageFile)
@@ -78,7 +145,9 @@ void updateStatusIcon(void)
 
 void changeMode(int newMode)
 {
+    lastMode = mode;
     mode = newMode;
+    isAlphaLockActive = FALSE;
     updateStatusIcon();
 }
 
@@ -143,8 +212,13 @@ gboolean isShiftRequired(KeySym keySym)
 void emulateKeyPress(KeySym keySym)
 {
     KeyCode modcode = 0; //init value
+    isKeyPressed = TRUE;
     
     if (keySym == NoSymbol) {
+        return;
+    }
+    
+    if (specialKey(keySym, EVENT_PRESS)) {
         return;
     }
     
@@ -165,11 +239,15 @@ void emulateKeyPress(KeySym keySym)
 void emulateKeyRelease(KeySym keySym)
 {
     KeyCode modcode = 0; //init value
+    isKeyPressed = FALSE;
     
     if (keySym == NoSymbol) {
         return;
     }
-    
+
+    if (specialKey(keySym, EVENT_RELEASE)) {
+        return;
+    }
 
     modcode = XKeysymToKeycode(display, keySym);
     
@@ -219,9 +297,9 @@ gboolean loop(gpointer data)
         setBit(row);
         for (col = 0; col < colCount; col++) {
             if (digitalRead(colPins[col]) == HIGH) {
+                handleLockStatus();
                 ks = getKeySymbol(row, col);
                 emulateKeyPress(ks);
-                isKeyPressed = TRUE;
                 while (keyFound == FALSE && digitalRead(colPins[col]) == HIGH) {
                     if (ks == XK_F11 && digitalRead(ONKEY_PIN) == LOW) {
                         g_print("Mode Change Key Combo Detected\n");
@@ -230,7 +308,6 @@ gboolean loop(gpointer data)
                     }
                 };
                 emulateKeyRelease(ks);
-                isKeyPressed = FALSE;
                 keyFound = TRUE;                            // Force exit of both for loops.
             }
             
@@ -244,6 +321,7 @@ gboolean loop(gpointer data)
     
     if (digitalRead(ONKEY_PIN) == LOW) {
         if (!keyFound) {
+            handleLockStatus();
             if (mode == MODE_TI83) {
                 // Emulate F12 and Check For Mode Change Combo
                 emulateKeyPress(XK_F12);
@@ -258,8 +336,12 @@ gboolean loop(gpointer data)
                 emulateKeyRelease(XK_F12);
                 delay(BOUNCE_DELAY);
             } else if (mode == MODE_SECOND) {
+                emulateKeyPress(NoSymbol);
                 // Power Down
                 g_print("Power Down\n");
+                // So that we don't keep looping
+                while (digitalRead(ONKEY_PIN) == LOW);
+                emulateKeyRelease(NoSymbol);
             } else {
                 // Check For Mode Change Combo
                 emulateKeyPress(NoSymbol);
