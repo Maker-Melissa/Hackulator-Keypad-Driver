@@ -18,7 +18,7 @@
 // Alpha Lower -> Normal
 // Alpha Lower -> Alpha Lower with Lock
 // 2nd -> Previous Mode
-
+// Power Off Functionality
 // Change icon loading to a relative path instead of absolute path (optional)
 // Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
 // Remove any unused functions
@@ -80,12 +80,20 @@ gboolean specialKey(KeySym keySym, int eventType)
 
 void brightnessUp(void)
 {
-    
+    if (brightness < MAX_BRIGHTNESS) {
+        brightness += 1;
+        softPwmWrite (BACKLIGHT_PIN, brightness);
+    }
+    g_print("Brightness Up [%i/%i]", brightness, MAX_BRIGHTNESS);
 }
 
 void brightnessDown(void)
 {
-    
+    if (brightness > 0) {
+        brightness -= 1;
+        softPwmWrite (BACKLIGHT_PIN, brightness);
+    }
+    g_print("Brightness Down [%i/%i]", brightness, MAX_BRIGHTNESS);
 }
 
 void handleLockStatus(void)
@@ -173,30 +181,6 @@ void destroy(GtkWidget *widget, gpointer data)
     gtk_main_quit ();
 }
 
-void setup(void)
-{
-    int i;
-   
-    if (wiringPiSetup() == -1) {
-        g_print("wiringPiSetup error\n");
-        exit(1);
-    }
-    
-    if ((display = XOpenDisplay(NULL)) == NULL) {
-        g_print("XOpenDisplay Initialization Failure\n");
-        exit(2);
-    }
-    
-    sr595Setup (100, 8, DATA_PIN, CLOCK_PIN, LATCH_PIN) ;
-    
-    colCount = getColCount();
-    
-    for (i = 0; i < colCount; i++) {   // Set column pins for input, with pullup.
-        pinMode(colPins[i], INPUT);
-        pullUpDnControl (colPins[i], PUD_DOWN);
-    }
-}
-
 gboolean isShiftRequired(KeySym keySym)
 {
     // Check if a Shift is Required
@@ -281,6 +265,30 @@ KeySym getKeySymbol(int row, int col)
     
     g_print("Getting Normal Key for [%i, %i]\n", row, col);
     return normalLayout[row][col];
+}
+
+void setup(void)
+{
+    int i;
+    
+    if (wiringPiSetup() == -1) {
+        g_print("wiringPiSetup error\n");
+        exit(1);
+    }
+    
+    if ((display = XOpenDisplay(NULL)) == NULL) {
+        g_print("XOpenDisplay Initialization Failure\n");
+        exit(2);
+    }
+    
+    sr595Setup (100, 8, DATA_PIN, CLOCK_PIN, LATCH_PIN) ;
+    softPwmCreate (BACKLIGHT_PIN, MAX_BRIGHTNESS, MAX_BRIGHTNESS);
+    colCount = getColCount();
+    
+    for (i = 0; i < colCount; i++) {   // Set column pins for input, with pullup.
+        pinMode(colPins[i], INPUT);
+        pullUpDnControl (colPins[i], PUD_DOWN);
+    }
 }
 
 gboolean loop(gpointer data)

@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <wiringPi.h>
+#include <softPwm.h>
 #include <sr595.h>
 #include <gtk/gtk.h>
 #include <X11/Xlib.h>
@@ -22,6 +23,7 @@
 #define DATA_PIN    27
 #define LATCH_PIN   26
 #define ONKEY_PIN   9
+#define BACKLIGHT_PIN   1
 
 // Event Types
 #define EVENT_PRESS 1
@@ -48,6 +50,7 @@
 #define SPECIAL_BRIGHT_DOWN_KEY       0x8006
 
 #define SHIFT_SYMBOL_SIZE 39
+#define MAX_BRIGHTNESS   10
 
 GtkStatusIcon *tray;
 Display *display;
@@ -158,6 +161,7 @@ gboolean isAlphaLockActive = FALSE;
 gboolean isKeyPressed = FALSE;
 static int counter = 0;
 int colCount = 0;
+int brightness = MAX_BRIGHTNESS;
 
 gboolean isShiftRequired(KeySym keySym);
 int getColCount(void);
