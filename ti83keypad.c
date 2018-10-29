@@ -5,9 +5,9 @@
 
 // To Do:
 // Add Screen to Black for Shutdown
-// Change icon loading to a relative path instead of absolute path (optional)
 // Add functionality so that if you rightclick the status icon, it shows the about dialog (optional)
 // Remove any unused functions
+// Remove Debugging Messages (Search for g_print)
 // Polish up any other small details
 
 #include "ti83keypad.h"
@@ -49,7 +49,7 @@ gboolean specialKey(KeySym keySym, int eventType)
         } else if (keySym == SPECIAL_BRIGHT_DOWN_KEY) {
             brightnessDown();
         }
-   }
+    }
     
     if (keySym == SPECIAL_ALPHA_UPPER_KEY ||
         keySym == SPECIAL_ALPHA_LOWER_KEY ||
@@ -71,6 +71,7 @@ void brightnessUp(void)
         softPwmWrite (BACKLIGHT_PIN, brightness);
     }
     g_print("Brightness Up [%i/%i]", brightness, MAX_BRIGHTNESS);
+    changeMode(MODE_NORMAL);
 }
 
 void brightnessDown(void)
@@ -80,6 +81,7 @@ void brightnessDown(void)
         softPwmWrite (BACKLIGHT_PIN, brightness);
     }
     g_print("Brightness Down [%i/%i]", brightness, MAX_BRIGHTNESS);
+    changeMode(MODE_NORMAL);
 }
 
 // This function handles lock status for the non-special keys
@@ -113,13 +115,27 @@ void changeAlphaLock(void)
 
 gchar * getImagePath(char * imageFile)
 {
-    const char* currentFolder = "/home/pi/ti83keypad/";
-    const char* imageFolder = "images/";
+    char currentFolder[256];
+    char pathSave[256];
+    const char* imageFolder = "/images/";
     GString * imagePath = g_string_new("");
-    g_string_append(imagePath, currentFolder);
+
+    gchar * result = g_strstr_len (executable->str, 1, "/");
+    if (result == NULL) {
+        if (getcwd(currentFolder, sizeof(currentFolder)) == NULL) {
+            g_print ("Error getting Current Working Directory\n");
+        }
+    } else {
+        getcwd(pathSave, sizeof(pathSave));
+        chdir(executable->str);
+        getcwd(currentFolder, sizeof(currentFolder));
+        chdir(pathSave);
+    }
+
+    g_string_append(imagePath, (char*) currentFolder);
     g_string_append(imagePath, imageFolder);
     g_string_append(imagePath, imageFile);
-    //g_print(imagePath->str);
+
     return imagePath->str;
 }
 
@@ -160,14 +176,6 @@ void cycleModes(void)
     } else {
         changeMode(MODE_TI83);
     }
-}
-
-void greet(GtkWidget *widget, gpointer data)
-{
-    // printf equivalent in GTK+
-    g_print ("TI-83 Keypad Driver\n");
-    g_print ("%s clicked %d times\n",
-             (char*)data, ++counter);
 }
 
 void destroy(GtkWidget *widget, gpointer data)
@@ -391,6 +399,9 @@ static void show_about( GtkWidget *widget, gpointer data )
 
 int main(int argc, char *argv[])
 {
+    executable = g_string_new("");
+    g_string_append(executable, argv[0]);
+    
     gtk_init (&argc, &argv);
 
     if (geteuid() != 0) {

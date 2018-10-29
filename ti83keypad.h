@@ -159,9 +159,9 @@ int mode = MODE_NORMAL;
 int lastMode = MODE_NORMAL;
 gboolean isAlphaLockActive = FALSE;
 gboolean isKeyPressed = FALSE;
-static int counter = 0;
 int colCount = 0;
 int brightness = MAX_BRIGHTNESS;
+GString * executable;
 
 gboolean isShiftRequired(KeySym keySym);
 int getColCount(void);
@@ -177,7 +177,6 @@ void handleLockStatus(KeySym keySym);
 void updateStatusIcon(void);
 void changeMode(int newMode);
 void cycleModes(void);
-void greet(GtkWidget *widget, gpointer data);
 void destroy(GtkWidget *widget, gpointer data);
 void setup(void);
 void powerDown(void);
