@@ -48,6 +48,8 @@ gboolean specialKey(KeySym keySym, int eventType)
             brightnessUp();
         } else if (keySym == SPECIAL_BRIGHT_DOWN_KEY) {
             brightnessDown();
+        } else if (keySym == SPECIAL_CONTROL_LOCK) {
+            changeControlLock();
         }
     }
     
@@ -57,7 +59,8 @@ gboolean specialKey(KeySym keySym, int eventType)
         keySym == SPECIAL_LOCK_KEY ||
         keySym == SPECIAL_NORMAL_KEY ||
         keySym == SPECIAL_BRIGHT_UP_KEY ||
-        keySym == SPECIAL_BRIGHT_DOWN_KEY) {
+        keySym == SPECIAL_BRIGHT_DOWN_KEY ||
+        keySym == SPECIAL_CONTROL_LOCK) {
         return TRUE;
     }
     
@@ -113,13 +116,23 @@ void changeAlphaLock(void)
     }
 }
 
+void changeControlLock(void)
+{
+    if (isControlLockActive) {
+        isControlLockActive = FALSE;
+    } else {
+        isControlLockActive = TRUE;
+    }
+}
+
 gchar * getImagePath(char * imageFile)
 {
-    char currentFolder[256];
-    char pathSave[256];
+    // Can't get it working with autostart, so just using Absolute path for now
+    //char currentFolder[256];
+    //char pathSave[256];
     const char* imageFolder = "/images/";
-    GString * imagePath = g_string_new("");
-
+    GString * imagePath = g_string_new("/home/pi/ti83keypad");
+/*
     gchar * result = g_strstr_len (executable->str, 1, "/");
     if (result == NULL) {
         if (getcwd(currentFolder, sizeof(currentFolder)) == NULL) {
@@ -130,9 +143,9 @@ gchar * getImagePath(char * imageFile)
         chdir(executable->str);
         getcwd(currentFolder, sizeof(currentFolder));
         chdir(pathSave);
-    }
+    }*/
 
-    g_string_append(imagePath, (char*) currentFolder);
+    //g_string_append(imagePath, (char*) currentFolder);
     g_string_append(imagePath, imageFolder);
     g_string_append(imagePath, imageFile);
 
@@ -165,6 +178,10 @@ void changeMode(int newMode)
     mode = newMode;
     if (newMode == MODE_NORMAL || newMode == MODE_TI83) {
         isAlphaLockActive = FALSE;
+        isControlLockActive = FALSE;
+    }
+    if (newMode == MODE_SECOND) {
+        isControlLockActive = FALSE;
     }
     updateStatusIcon();
 }
@@ -213,12 +230,18 @@ void emulateKeyPress(KeySym keySym)
     modcode = XKeysymToKeycode(display, keySym);
     
     if (isShiftRequired(keySym)) {
-        g_print("Event: Shift Pressed\n");
+        //g_print("Event: Shift Pressed\n");
         XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Shift_L), True, 0);
         XFlush(display);
     }
-    
-    g_print("Event: Key Pressed\n");
+
+    if (isControlLockActive) {
+        //g_print("Event: Control Pressed\n");
+        XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Control_L), True, 0);
+        XFlush(display);
+    }
+
+    //g_print("Event: Key Pressed\n");
     
     XTestFakeKeyEvent(display, modcode, True, 0);
     XFlush(display);
@@ -239,12 +262,19 @@ void emulateKeyRelease(KeySym keySym)
 
     modcode = XKeysymToKeycode(display, keySym);
     
-    g_print("Event: Key Released\n");
+    //g_print("Event: Key Released\n");
     XTestFakeKeyEvent(display, modcode, False, 0);
     XFlush(display);
-    
+
+    if (isControlLockActive) {
+        //g_print("Event: Control Pressed\n");
+        XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Control_L), True, 0);
+        XFlush(display);
+        isControlLockActive = FALSE;
+    }
+
     if (isShiftRequired(keySym)) {
-        g_print("Event: Shift Released\n");
+        //g_print("Event: Shift Released\n");
         XTestFakeKeyEvent(display, XKeysymToKeycode(display, XK_Shift_L), False, 0);
         XFlush(display);
     }
@@ -261,20 +291,15 @@ void shutdown(void)
 KeySym getKeySymbol(int row, int col)
 {
     if (mode == MODE_TI83) {
-        g_print("Getting TI-83 Key for [%i, %i]\n", row, col);
         return ti83Layout[row][col];
     } else if (mode == MODE_ALPHA_UPPER) {
-        g_print("Getting Upper Key for [%i, %i]\n", row, col);
         return alphaUpperLayout[row][col];
     } else if (mode == MODE_ALPHA_LOWER) {
-        g_print("Getting Lower Key for [%i, %i]\n", row, col);
         return alphaLowerLayout[row][col];
     } else if (mode == MODE_SECOND) {
-        g_print("Getting Second Key for [%i, %i]\n", row, col);
         return secondLayout[row][col];
     }
     
-    g_print("Getting Normal Key for [%i, %i]\n", row, col);
     return normalLayout[row][col];
 }
 
